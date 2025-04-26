@@ -1,0 +1,291 @@
+{
+  "name": "Main",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Work with us",
+        "formDescription": "Provide your details bellow and we will reach out to you!",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "What is your name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your company website",
+              "placeholder": "e.g. https://",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "How can we help you",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "198bc05b-527b-4419-ab33-52d48c36a640",
+      "name": "On form submission",
+      "webhookId": "26c1538d-328c-422a-a3cd-bcd8074dca21"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-d7b62b.stack.tryrelevance.com/latest/studios/f4d21b9b-e899-4702-a36a-f1db28271ff5/trigger_webhook?project=2f8bc8bc5432-4b29-af7a-9e3f8b0e4c9e",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"company_url\":\"{{ $json['What is your company website'] }}\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "e5eb65af-5bc8-4177-bb2f-7fa7f008e4ce",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an inbound lead qualification agent. Your job is to analyze the form submission and company research provided and decide whether they are qualified to work with Big Boy Recruits, a Dallas based recruitment firm.\n\nBig Boy Recruits specializes in IT and tech talent placements. We are specialists in capturing talent post liquidiation and can therefore provide talent to our clients as we hit the market. \n\nWe only work with Software based businesses, e.g. SaaS companies or development agencies. These companies are willing to pay much more developers than your average marketing company or local business, therefore we only work with them.\n\nYour job is to determine if the lead you are provided with is a good fit for Big Boy Recruits, and if so call the 'lead_is_qualified' tool and send the lead information to it. If the lead is not qualified, then you must trigger the gmail send email tool for us to respond to them letting them know we are unable to help them.\n\nHere is the lead information for you to analyze:\nName: {{ $('On form submission').item.json['What is your name'] }}\nCompany URL: {{ $('On form submission').item.json['What is your company website'] }}\nMessage/Request: {{ $('On form submission').item.json['How can we help you'] }}\nCompany Research (scraped from their website):\n{{ $json.answer }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        440,
+        0
+      ],
+      "id": "a54bcaf7-901b-4657-88a8-59e50c423c4c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        360,
+        200
+      ],
+      "id": "ad2bcf00-6166-45c7-81cb-8e6f07953b76",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "G1LLq4y8OnVcH8mM",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['What is your email'] }}",
+        "subject": "Thanks",
+        "emailType": "text",
+        "message": "=Hi {{ $('On form submission').item.json['What is your name'] }}\n\nThanks for your interest in Big Boy Recruitment services! AS we specialze in recruitment for software businesses such as SaaS and development agencies, we're not a good fit for you based on your company's industry.\n\nPlease let me know if you'd like us to connect you with one of our partners who specialzies in dealing with your needs.\n\nCheers,\n\nHuge Jackman\nHead of Sales, Big Boy Recruits (BBR)\nDallas, TX",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        740,
+        220
+      ],
+      "id": "61f44813-5054-4bc1-9087-2454ad52da95",
+      "name": "Gmail",
+      "webhookId": "082ec722-2958-430d-a9f7-98f3f396f748",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PH1xQSdejSmW0Kzc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "lead_is_qualified",
+        "description": "If the lead is qualified to work with Big Boy Recruits, e.g. they are a software based business like SaaS or development agencies, then trigger this tool and send the lead data in the following format (the data in this is dummy and you should replace it with the correct data):\n\n{\n  \"name\": \"a name\",\n  \"email\": \"adm@gmail.com\",\n  \"message\": \"I want a new dev\",\n\"qualified\": true,\n  \"company_information\": \"this comapny is from Miranda...big bit of info here\"\n}",
+        "source": "=database",
+        "workflowId": {
+          "__rl": true,
+          "value": "z3h1e0RHA9XsmUAh",
+          "mode": "list",
+          "cachedResultName": "Qualified"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Qualified": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Qualified', `If lead matches criteria, set to true`, 'string') }}",
+            "Lean Name": "={{ $('On form submission').item.json['What is your name'] }}",
+            "Email": "={{ $('On form submission').item.json['What is your email'] }}",
+            "Message": "={{ $('On form submission').item.json['How can we help you'] }}",
+            "Company info": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Company_info', `a short summary of company details and the industry that they are in`, 'string') }}"
+          },
+          "matchingColumns": [
+            "Lean Name"
+          ],
+          "schema": [
+            {
+              "id": "Lean Name",
+              "displayName": "Lean Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Company info",
+              "displayName": "Company info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Qualified",
+              "displayName": "Qualified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        600,
+        220
+      ],
+      "id": "d35d6309-26a1-42c0-8427-c4ab334e536a",
+      "name": "Call n8n Workflow Tool"
+    }
+  ],
+  "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "What is your name": "R Y",
+          "What is your email": "lstojanovic5623rn@raf.rs",
+          "What is your company website": "https://mcdonalds.com",
+          "How can we help you": "More ppl",
+          "submittedAt": "2025-04-27T00:06:30.459+02:00",
+          "formMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call n8n Workflow Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ee309a7a-9345-4ef4-815b-ed361cb112f8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd66a10bc627f18c468dace6b6019ca07137615923dd948356ea89957b9d7470"
+  },
+  "id": "10VNULUWMQFrd0hL",
+  "tags": []
+}

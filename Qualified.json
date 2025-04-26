@@ -1,0 +1,217 @@
+{
+  "name": "Qualified",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Lean Name"
+            },
+            {
+              "name": "Email"
+            },
+            {
+              "name": "Message"
+            },
+            {
+              "name": "Company info"
+            },
+            {
+              "name": "Qualified",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f5b7f5cc-6bf5-4e0d-b69f-accb655c206b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=We have a new inbound lead and we need you to classify it into either SaaS or development agency category.\n\nHere is the lead information:\nName: {{ $json['Lean Name'] }}\nRequest: {{ $json.Message }}\nCompany Information: \n{{ $json['Company info'] }}\n\nIf the lead a SaaS company, output 'SaaS'\nIf the lead is a development agency, output 'Agency'"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        220,
+        0
+      ],
+      "id": "63842377-f3b1-4fe8-b7c1-93666af542de",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "MbiU19tjYywSCjwK",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "78612d13-6d2a-45a3-86ef-04208fdce4df",
+              "leftValue": "={{ $json.message.content }}",
+              "rightValue": "Agency",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "3ce1f4ee-4d74-426c-bb83-5d509145e407",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('When Executed by Another Workflow').item.json.Email }}",
+        "subject": "New Agency Lead",
+        "emailType": "text",
+        "message": "=Just for a test: {{ $('When Executed by Another Workflow').item.json['Company info'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -100
+      ],
+      "id": "2bfce7e8-8495-4d4a-ae75-c659bfef171a",
+      "name": "Agency Gmail",
+      "webhookId": "edef0f2b-6b8c-4705-bb47-20fd704e96a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PH1xQSdejSmW0Kzc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lstojanovic5623rn@raf.rs",
+        "subject": "New SaasLead",
+        "emailType": "text",
+        "message": "=Just for a test: {{ $('When Executed by Another Workflow').item.json['Company info'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        80
+      ],
+      "id": "7a693b02-2412-4ef1-a7fb-5d5466d06d76",
+      "name": "SaaS Gmail",
+      "webhookId": "edef0f2b-6b8c-4705-bb47-20fd704e96a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PH1xQSdejSmW0Kzc",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Lean Name": "Lazar Stojanovic",
+          "Email": "lazarstojanovic5623@gmail.com",
+          "Message": "Agent pls",
+          "Company info": "Morningside AI is an AI solutions and education company. They offer services like AI strategy, Autonomous Agent Development, and Chatbot Development.",
+          "Qualified": true
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Agency Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SaaS Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aa6aa1aa-6f57-4d68-a5ca-293092433bf8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd66a10bc627f18c468dace6b6019ca07137615923dd948356ea89957b9d7470"
+  },
+  "id": "z3h1e0RHA9XsmUAh",
+  "tags": []
+}
